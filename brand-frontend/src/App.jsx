@@ -6,7 +6,6 @@ import { ToastProvider } from "./components/Toast";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
-import ChatBot from "./components/ChatBot";
 import AnnouncementBar from "./components/AnnouncementBar";
 import ScrollToTop from "./components/ScrollToTop";
 
@@ -49,7 +48,6 @@ function PublicLayout() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <Footer />
-      <ChatBot />
     </>
   );
 }
