@@ -98,13 +98,50 @@ router.put("/:id", verifyToken, upload.single("image"), async (req, res) => {
 });
 
 // Delete category (Admin only)
+// If the category has products, they are reassigned to another category before deletion.
 router.delete("/:id", verifyToken, async (req, res) => {
   try {
+    const categoryId = Number(req.params.id);
+
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+      include: { _count: { select: { products: true } } },
+    });
+
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    if (category._count.products > 0) {
+      const otherCategory = await prisma.category.findFirst({
+        where: { id: { not: categoryId } },
+        orderBy: { name: "asc" },
+      });
+
+      if (!otherCategory) {
+        return res.status(400).json({
+          message:
+            "Cannot delete the only category while it has products. Create another category, move or delete the products, then try again.",
+        });
+      }
+
+      await prisma.product.updateMany({
+        where: { categoryId },
+        data: { categoryId: otherCategory.id },
+      });
+    }
+
     await prisma.category.delete({
-      where: { id: Number(req.params.id) },
+      where: { id: categoryId },
     });
     res.json({ message: "Category deleted successfully" });
   } catch (error) {
+    if (error.code === "P2003") {
+      return res.status(400).json({
+        message:
+          "Cannot delete category because it is still in use. Please remove or reassign products first.",
+      });
+    }
     res.status(500).json({ error: error.message });
   }
 });
