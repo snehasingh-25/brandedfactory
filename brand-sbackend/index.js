@@ -45,7 +45,7 @@ app.use("/reels", reelRoutes);
 app.use("/brands", brandRoutes);
 app.use("/banners", bannerRoutes);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
