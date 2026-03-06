@@ -7,7 +7,7 @@ export const verifyToken = (req, res, next) => {
     const raw = req.headers.authorization?.split(" ")[1];
    // const token = raw?.trim();
 
-    if (!token) {
+    if (!raw) {
       return res.status(401).json({ message: "No token provided" });
     }
     console.log(raw);
