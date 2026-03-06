@@ -7,7 +7,7 @@ const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-production";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Login
 router.post("/login", async (req, res) => {
@@ -36,9 +36,12 @@ router.post("/login", async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: "7d" }
+      JWT_SECRET
     );
+    console.log(process.env.JWT_SECRET);
+    console.log("admin login successful");
+    console.log(token);
+    console.log(user);
 
     res.json({
       message: "Login successful",
