@@ -47,12 +47,15 @@ export default function AdminDashboard() {
       const headers = { Authorization: `Bearer ${token}` };
 
       if (activeTab === "products") {
+        // All three requests run in parallel so categories are available for the product form
         const [productsRes, brandsRes, categoriesRes] = await Promise.all([
           fetch(`${API}/products`, { headers }),
           fetch(`${API}/brands/all`, { headers }),
           fetch(`${API}/categories`, { headers })
         ]);
-        
+        if (typeof console !== "undefined" && console.log) {
+          console.log("[AdminDashboard] products tab: products", productsRes.status, "brands", brandsRes.status, "categories", categoriesRes.status);
+        }
         if (!productsRes.ok) {
           const errorData = await productsRes.json();
           console.error("Error fetching products:", errorData);
