@@ -36,12 +36,9 @@ router.post("/login", async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { userId: user.id, email: user.email },
-      JWT_SECRET
+      JWT_SECRET,
+      { expiresIn: "30d" }
     );
-    console.log(process.env.JWT_SECRET);
-    console.log("admin login successful");
-    console.log(token);
-    console.log(user);
 
     res.json({
       message: "Login successful",
@@ -49,7 +46,6 @@ router.post("/login", async (req, res) => {
       user: { id: user.id, email: user.email },
     });
   } catch (error) {
-    console.error("Login error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -87,7 +83,7 @@ router.post("/register", async (req, res) => {
     const token = jwt.sign(
       { userId: user.id, email: user.email },
       JWT_SECRET,
-      { expiresIn: "7d" }
+      { expiresIn: "30d" }
     );
 
     res.json({
@@ -96,7 +92,6 @@ router.post("/register", async (req, res) => {
       user: { id: user.id, email: user.email },
     });
   } catch (error) {
-    console.error("Register error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

@@ -47,9 +47,10 @@ export default function AdminDashboard() {
       const headers = { Authorization: `Bearer ${token}` };
 
       if (activeTab === "products") {
-        const [productsRes, brandsRes] = await Promise.all([
+        const [productsRes, brandsRes, categoriesRes] = await Promise.all([
           fetch(`${API}/products`, { headers }),
-          fetch(`${API}/brands/all`, { headers })
+          fetch(`${API}/brands/all`, { headers }),
+          fetch(`${API}/categories`, { headers })
         ]);
         
         if (!productsRes.ok) {
@@ -64,6 +65,11 @@ export default function AdminDashboard() {
         if (brandsRes.ok) {
           const brandsData = await brandsRes.json();
           setBrands(Array.isArray(brandsData) ? brandsData : []);
+        }
+
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json();
+          setCategories(Array.isArray(categoriesData) ? categoriesData : []);
         }
       } else if (activeTab === "categories") {
         const res = await fetch(`${API}/categories`, { headers });

@@ -12,7 +12,6 @@ export const verifyToken = (req, res, next) => {
     // Read secret at request time so it's always current (avoids undefined when module loaded before env)
     const secret = process.env.JWT_SECRET;
     if (!secret) {
-      console.error("JWT_SECRET is not set in environment");
       return res.status(500).json({ message: "Server configuration error" });
     }
 
@@ -20,7 +19,6 @@ export const verifyToken = (req, res, next) => {
     req.userId = decoded.userId;
     next();
   } catch (error) {
-    console.error("JWT verify failed:", error.message);
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
