@@ -1,27 +1,25 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET;
-
 export const verifyToken = (req, res, next) => {
   try {
     const raw = req.headers.authorization?.split(" ")[1];
-   // const token = raw?.trim();
+    const token = raw?.trim();
 
-    if (!raw) {
+    if (!token) {
       return res.status(401).json({ message: "No token provided" });
     }
-    console.log(raw);
-    console.log(process.env.JWT_SECRET);
-   
 
-    const decoded = jwt.verify(raw,JWT_SECRET);
+    // Read secret at request time so it's always current (avoids undefined when module loaded before env)
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      console.error("JWT_SECRET is not set in environment");
+      return res.status(500).json({ message: "Server configuration error" });
+    }
+
+    const decoded = jwt.verify(token, secret);
     req.userId = decoded.userId;
-    console.log("JWT verify successful");
-    console.log(decoded);
     next();
   } catch (error) {
-    // Always log server-side (never sent to client) so you can see "expired" vs "invalid signature"
-    console.log("bad token");
     console.error("JWT verify failed:", error.message);
     return res.status(401).json({ message: "Invalid or expired token" });
   }
