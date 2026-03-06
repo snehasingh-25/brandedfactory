@@ -101,7 +101,8 @@ router.post("/register", async (req, res) => {
 // Verify token
 router.get("/verify", async (req, res) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const raw = req.headers.authorization?.split(" ")[1];
+    const token = raw?.trim();
 
     if (!token) {
       return res.status(401).json({ message: "No token provided" });

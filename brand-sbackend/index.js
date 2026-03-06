@@ -16,14 +16,37 @@ import bannerRoutes from "./routes/banners.js";
 
 dotenv.config();
 
+// In production, JWT_SECRET must be set and must match across deployments.
+// If you migrate servers (e.g. Render → Digital Ocean), admins must log out and log in again
+// so new tokens are signed with the current server's secret.
+const jwtSecret = process.env.JWT_SECRET;
+if (process.env.NODE_ENV === "production" && (!jwtSecret || jwtSecret === "your-secret-key-change-in-production")) {
+  console.warn("⚠️  JWT_SECRET is missing or default in production. Set a strong secret in your environment.");
+}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
 
-// CORS configuration
-app.use(cors({
-}));
+// CORS: allow frontend origin and Authorization header (required for admin create/update).
+// Set FRONTEND_URL to your production URL (e.g. https://brandedfactorybhilwara.com).
+// Local dev (localhost:5173) is always allowed.
+const frontendUrl = process.env.FRONTEND_URL?.trim();
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  ...(frontendUrl ? [frontendUrl] : []),
+];
+const corsOptions = {
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+    cb(null, false);
+  },
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+app.use(cors(corsOptions));
 
 app.use(express.json());
 

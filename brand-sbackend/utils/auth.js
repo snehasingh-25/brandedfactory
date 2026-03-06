@@ -4,7 +4,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key-change-in-producti
 
 export const verifyToken = (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    const raw = req.headers.authorization?.split(" ")[1];
+    const token = raw?.trim();
 
     if (!token) {
       return res.status(401).json({ message: "No token provided" });
@@ -14,6 +15,9 @@ export const verifyToken = (req, res, next) => {
     req.userId = decoded.userId;
     next();
   } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.error("JWT verify failed:", error.message);
+    }
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
