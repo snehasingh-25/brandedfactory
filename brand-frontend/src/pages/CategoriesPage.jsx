@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import { Link } from "react-router-dom";
 import ProductCard from "../components/ProductCard";
+import EmptyState from "../components/EmptyState";
+import { shuffleArray } from "../utils/shuffle";
 
 export default function CategoriesPage() {
   const { slug } = useParams();
@@ -13,24 +15,25 @@ export default function CategoriesPage() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const categoryScrollRef = useRef(null);
 
   useEffect(() => {
     Promise.all([
       fetch(`${API}/categories`).then(res => res.json()),
       fetch(`${API}/brands`).then(res => res.json())
     ])
-      .then(([categoriesData, occasionsData]) => {
+      .then(([categoriesData, brandsData]) => {
         setCategories(categoriesData);
         setBrands(brandsData);
         if (slug) {
           const category = categoriesData.find(cat => cat.slug === slug);
           if (category) {
             setSelectedCategory(category);
-          } else if (categoriesData.length > 0) {
-            setSelectedCategory(categoriesData[0]);
+          } else {
+            setSelectedCategory(null);
           }
-        } else if (categoriesData.length > 0) {
-          setSelectedCategory(categoriesData[0]);
+        } else {
+          setSelectedCategory(null);
         }
         setLoading(false);
       })
@@ -41,13 +44,27 @@ export default function CategoriesPage() {
   }, [slug]);
 
   useEffect(() => {
-    if (selectedCategory && slug) {
+    if (selectedCategory) {
       fetchCategoryProducts(selectedCategory.slug, brandFilter);
     } else {
-      setProducts([]);
+      fetchAllProducts(brandFilter);
+    }
+  }, [selectedCategory, brandFilter]);
+
+  const fetchAllProducts = async (brand = "") => {
+    setLoading(true);
+    try {
+      const params = brand ? new URLSearchParams({ brand }) : new URLSearchParams();
+      const res = await fetch(`${API}/products?${params.toString()}`);
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [];
+      setProducts(shuffleArray(list));
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
       setLoading(false);
     }
-  }, [selectedCategory, slug, brandFilter]);
+  };
 
   const fetchCategoryProducts = async (categorySlug, brand = "") => {
     setLoading(true);
@@ -59,7 +76,7 @@ export default function CategoriesPage() {
       }
       const res = await fetch(`${API}/products?${params.toString()}`);
       const data = await res.json();
-      setProducts(data);
+      setProducts(shuffleArray(Array.isArray(data) ? data : []));
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
@@ -108,6 +125,15 @@ export default function CategoriesPage() {
     setSearchParams(params);
   };
 
+  const scrollCategories = (direction) => {
+    if (categoryScrollRef.current) {
+      categoryScrollRef.current.scrollBy({
+        left: direction === "left" ? -280 : 280,
+        behavior: "smooth",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen py-16 flex items-center justify-center" style={{ backgroundColor: 'var(--background)' }}>
@@ -131,60 +157,93 @@ export default function CategoriesPage() {
           </p>
         </div>
 
-        {/* Categories Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              to={`/category/${category.slug}`}
-              onClick={() => handleCategoryClick(category)}
-              className="group relative aspect-[4/5] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500"
-              style={{ backgroundColor: 'var(--card)' }}
-            >
-              {/* Background Image */}
-              {category.imageUrl ? (
-                <img
-                  src={category.imageUrl}
-                  alt={category.name}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                />
-              ) : (
-                <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl" style={{ backgroundColor: 'var(--secondary)' }}>
-                  {getCategoryEmoji(category.name)}
+        {/* Categories – horizontal scroll */}
+        <div className="relative mb-12">
+          <button
+            type="button"
+            onClick={() => scrollCategories("left")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+            style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--secondary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--card)';
+            }}
+          >
+            <svg className="w-5 h-5" style={{ color: 'var(--foreground)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div
+            ref={categoryScrollRef}
+            className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 px-2"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {categories.map((category) => (
+              <Link
+                key={category.id}
+                to={`/category/${category.slug}`}
+                onClick={() => handleCategoryClick(category)}
+                className="flex-shrink-0 w-[220px] sm:w-[260px] group relative aspect-[4/5] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500"
+                style={{ backgroundColor: 'var(--card)' }}
+              >
+                {category.imageUrl ? (
+                  <img
+                    src={category.imageUrl}
+                    alt={category.name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl" style={{ backgroundColor: 'var(--secondary)' }}>
+                    {getCategoryEmoji(category.name)}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
+                <div className="absolute inset-0 flex flex-col justify-end p-6">
+                  <h3 className="text-xl font-bold text-white mb-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                    {category.name}
+                  </h3>
+                  <div className="h-0.5 w-0 bg-white group-hover:w-full transition-all duration-500 ease-out" />
+                  <span className="text-white/80 text-sm mt-2 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100">
+                    Explore Collection &rarr;
+                  </span>
                 </div>
-              )}
-              
-              {/* Overlay gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
-              
-              {/* Content */}
-              <div className="absolute inset-0 flex flex-col justify-end p-6">
-                <h3 className="text-xl font-bold text-white mb-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                  {category.name}
-                </h3>
-                <div className="h-0.5 w-0 bg-white group-hover:w-full transition-all duration-500 ease-out"></div>
-                <span className="text-white/80 text-sm mt-2 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100">
-                  Explore Collection &rarr;
-                </span>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => scrollCategories("right")}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+            style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--secondary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--card)';
+            }}
+          >
+            <svg className="w-5 h-5" style={{ color: 'var(--foreground)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
 
-        {/* Products for Selected Category */}
-        {selectedCategory && slug && (
+        {/* Products: all when no category selected, or for selected category */}
+        {categories.length > 0 && (
           <div className="mt-12">
             <div className="mb-8">
               <h3 className="text-3xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>
-                {selectedCategory.name}
+                {selectedCategory ? selectedCategory.name : "All Products"}
               </h3>
-              {selectedCategory.description && (
+              {selectedCategory?.description && (
                 <p className="text-lg mb-4" style={{ color: 'var(--foreground)', opacity: 0.7 }}>
                   {selectedCategory.description}
                 </p>
               )}
 
-              {/* Occasion Filter */}
+              {/* Brand Filter */}
               <div className="flex flex-wrap items-center gap-4 mb-6">
                 <div className="flex items-center gap-2">
                   <label className="text-sm font-semibold" style={{ color: 'var(--foreground)' }}>
@@ -240,28 +299,22 @@ export default function CategoriesPage() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16">
-                <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'var(--secondary)' }}>
-                  <span className="text-4xl">🎁</span>
-                </div>
-                <p className="font-medium" style={{ color: 'var(--foreground)', opacity: 0.7 }}>
-                  No products available in this category yet
-                </p>
-              </div>
+              <EmptyState
+                logoSrc="/logo.jpeg"
+                title={selectedCategory ? "No products available in this category yet" : "No products available"}
+                description={selectedCategory ? "Products for this category will appear here once they are added." : "Products will appear here once they are added."}
+              />
             )}
           </div>
         )}
 
         {/* Show all categories if none selected */}
         {!selectedCategory && categories.length === 0 && (
-          <div className="text-center py-16">
-            <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'var(--secondary)' }}>
-              <span className="text-4xl">📦</span>
-            </div>
-            <p className="font-medium" style={{ color: 'var(--foreground)', opacity: 0.7 }}>
-              No categories available yet
-            </p>
-          </div>
+          <EmptyState
+            logoSrc="/logo.jpeg"
+            title="No categories available yet"
+            description="Categories will appear here once they are added."
+          />
         )}
       </div>
     </div>

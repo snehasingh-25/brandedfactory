@@ -22,6 +22,18 @@ const STANDARD_SIZE_OPTIONS = [
   "42",
   "44",
   "46",
+  // Shoe sizes (UK/India)
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "11",
+  "12",
   // Generic / one-size
   "Free Size",
 ];

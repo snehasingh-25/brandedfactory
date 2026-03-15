@@ -56,7 +56,7 @@ export default function ProductCard({ product }) {
           <ImagePlaceholder 
             width="100%" 
             height="100%" 
-            icon="🎁"
+            logoSrc="/logo.jpeg"
             className={images.length > 0 ? 'hidden' : ''}
           />
           

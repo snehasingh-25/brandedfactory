@@ -3,6 +3,7 @@ export default function ImagePlaceholder({
   width = "100%", 
   height = "200px", 
   icon = "🎁",
+  logoSrc = null,
   text = "",
   className = ""
 }) {
@@ -17,7 +18,11 @@ export default function ImagePlaceholder({
         opacity: 0.5
       }}
     >
-      <span className="text-4xl mb-2">{icon}</span>
+      {logoSrc ? (
+        <img src={logoSrc} alt="" className="max-h-16 max-w-full object-contain mb-2" />
+      ) : (
+        <span className="text-4xl mb-2">{icon}</span>
+      )}
       {text && (
         <span className="text-sm font-medium">{text}</span>
       )}

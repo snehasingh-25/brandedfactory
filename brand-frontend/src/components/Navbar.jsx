@@ -320,8 +320,8 @@ export default function Navbar() {
                                 className="w-12 h-12 object-cover rounded-lg"
                               />
                             ) : (
-                              <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--secondary)' }}>
-                                <span className="text-xl">🎁</span>
+                              <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'var(--secondary)' }}>
+                                <img src="/logo.jpeg" alt="" className="w-full h-full object-contain p-1" />
                               </div>
                             )}
                             <div className="flex-1 min-w-0">
@@ -530,7 +530,9 @@ export default function Navbar() {
                         {imgs.length > 0 ? (
                           <img src={imgs[0]} alt={product.name} className="w-12 h-12 object-cover rounded-lg" />
                         ) : (
-                          <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--secondary)' }}><span className="text-xl">🎁</span></div>
+                          <div className="w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'var(--secondary)' }}>
+                            <img src="/logo.jpeg" alt="" className="w-full h-full object-contain p-1" />
+                          </div>
                         )}
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-sm truncate" style={{ color: 'var(--foreground)' }}>{product.name}</div>

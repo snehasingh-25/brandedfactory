@@ -161,8 +161,8 @@ export default function ProductList({ products, onEdit, onDelete }) {
                             className="w-16 h-16 object-cover rounded-lg"
                           />
                         ) : (
-                          <div className="w-16 h-16 rounded-lg flex items-center justify-center text-2xl" style={{ backgroundColor: 'var(--secondary)' }}>
-                            🎁
+                          <div className="w-16 h-16 rounded-lg flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'var(--secondary)' }}>
+                            <img src="/logo.jpeg" alt="" className="w-full h-full object-contain p-1" />
                           </div>
                         )}
                       </td>

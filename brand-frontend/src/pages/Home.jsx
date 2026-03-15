@@ -4,6 +4,7 @@ import ProductCard from "../components/ProductCard";
 import { Link } from "react-router-dom";
 import HeroSection from "../components/HeroSection";
 import EmptyState from "../components/EmptyState";
+import { shuffleArray } from "../utils/shuffle";
 
 export default function Home() {
   const [products, setProducts] = useState([]);
@@ -12,14 +13,17 @@ export default function Home() {
   const [brands, setBrands] = useState([]);
   const [reels, setReels] = useState([]);
   const brandScrollRef = useRef(null);
+  const categoryScrollRef = useRef(null);
+  const productsScrollRef = useRef(null);
 
   useEffect(() => {
     fetch(`${API}/products`)
       .then(res => res.json())
       .then(data => {
-        setProducts(data);
-        // Trending products chosen from admin panel (isTrending)
-        setTrendingProducts((Array.isArray(data) ? data : []).filter(p => p?.isTrending).slice(0, 10));
+        const list = Array.isArray(data) ? data : [];
+        setProducts(shuffleArray(list));
+        // Trending products chosen from admin panel (isTrending), shuffled
+        setTrendingProducts(shuffleArray(list.filter(p => p?.isTrending)).slice(0, 10));
       });
 
     fetch(`${API}/categories`)
@@ -82,6 +86,26 @@ export default function Home() {
     }
   };
 
+  const scrollCategories = (direction) => {
+    if (categoryScrollRef.current) {
+      const scrollAmount = 280;
+      categoryScrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const scrollProducts = (direction) => {
+    if (productsScrollRef.current) {
+      const scrollAmount = 320;
+      productsScrollRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen fade-in" style={{ backgroundColor: 'var(--background)' }}>
       {/* Hero Section */}
@@ -103,49 +127,86 @@ export default function Home() {
               </svg>
             </Link>
           </div>
-          
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                to={`/category/${category.slug}`}
-                className="group relative aspect-[4/5] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500"
-                style={{ backgroundColor: 'var(--card)' }}
-              >
-                {/* Background Image */}
-                {category.imageUrl ? (
-                  <img
-                    src={category.imageUrl}
-                    alt={category.name}
-                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  />
-                ) : (
-                  <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl" style={{ backgroundColor: 'var(--secondary)' }}>
-                    {getCategoryEmoji(category.name)}
+          <div className="relative">
+            <button
+              onClick={() => scrollCategories("left")}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'var(--secondary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'var(--card)';
+              }}
+            >
+              <svg className="w-5 h-5" style={{ color: 'var(--foreground)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div
+              ref={categoryScrollRef}
+              className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 px-2"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {categories.map((category) => (
+                <Link
+                  key={category.id}
+                  to={`/category/${category.slug}`}
+                  className="flex-shrink-0 w-[220px] sm:w-[260px] group relative aspect-[4/5] rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500"
+                  style={{ backgroundColor: 'var(--card)' }}
+                >
+                  {/* Background Image */}
+                  {category.imageUrl ? (
+                    <img
+                      src={category.imageUrl}
+                      alt={category.name}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 w-full h-full flex items-center justify-center text-6xl" style={{ backgroundColor: 'var(--secondary)' }}>
+                      {getCategoryEmoji(category.name)}
+                    </div>
+                  )}
+                  {/* Overlay gradient */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
+                  {/* Content */}
+                  <div className="absolute inset-0 flex flex-col justify-end p-6">
+                    <h3 className="text-xl font-bold text-white mb-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                      {category.name}
+                    </h3>
+                    <div className="h-0.5 w-0 bg-white group-hover:w-full transition-all duration-500 ease-out"></div>
+                    <span className="text-white/80 text-sm mt-2 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100">
+                      Explore Collection &rarr;
+                    </span>
                   </div>
-                )}
-                
-                {/* Overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300"></div>
-                
-                {/* Content */}
-                <div className="absolute inset-0 flex flex-col justify-end p-6">
-                  <h3 className="text-xl font-bold text-white mb-1 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                    {category.name}
-                  </h3>
-                  <div className="h-0.5 w-0 bg-white group-hover:w-full transition-all duration-500 ease-out"></div>
-                  <span className="text-white/80 text-sm mt-2 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100">
-                    Explore Collection &rarr;
-                  </span>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))}
+            </div>
+            <button
+              onClick={() => scrollCategories("right")}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'var(--secondary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'var(--card)';
+              }}
+            >
+              <svg className="w-5 h-5" style={{ color: 'var(--foreground)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <EmptyState 
-            icon="📦"
+            logoSrc="/logo.jpeg"
             title="No Categories Available"
             description="Categories will appear here once they are added."
           />
@@ -290,7 +351,7 @@ export default function Home() {
         </div>
       ) : null}
 
-      {/* Trending Gifts Section */}
+      {/* Products Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" style={{ backgroundColor: 'var(--background)' }}>
         <div className="flex items-center justify-between mb-10">
           <h2 className="text-3xl font-bold" style={{ color: 'var(--foreground)' }}>Products</h2>
@@ -307,30 +368,77 @@ export default function Home() {
             </Link>
           )}
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-          {products.length > 0 ? (
-            products.map((p, index) => (
-              <div key={p.id} className="fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                <ProductCard product={p} />
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full">
-              <EmptyState 
-                icon="🎁"
-                title="No Products Available"
-                description="Products will appear here once they are added to the catalog."
-              />
+        {products.length > 0 ? (
+          <div className="relative">
+            <button
+              onClick={() => scrollProducts("left")}
+              className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'var(--secondary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'var(--card)';
+              }}
+            >
+              <svg className="w-5 h-5" style={{ color: 'var(--foreground)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div
+              ref={productsScrollRef}
+              className="flex gap-6 overflow-x-auto scrollbar-hide pb-4 px-2"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {products.map((p, index) => (
+                <div key={p.id} className="flex-shrink-0 w-[280px] sm:w-[300px] fade-in" style={{ animationDelay: `${index * 0.05}s` }}>
+                  <ProductCard product={p} />
+                </div>
+              ))}
             </div>
-          )}
-        </div>
+            <button
+              onClick={() => scrollProducts("right")}
+              className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+              style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'var(--secondary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'var(--card)';
+              }}
+            >
+              <svg className="w-5 h-5" style={{ color: 'var(--foreground)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <EmptyState 
+            logoSrc="/logo.jpeg"
+            title="No Products Available"
+            description="Products will appear here once they are added to the catalog."
+          />
+        )}
       </div>
 
       {/* Reels Section */}
       {reels.length > 0 && (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" style={{ backgroundColor: 'var(--background)' }}>
           <h2 className="text-3xl font-bold mb-8 text-center" style={{ color: 'var(--foreground)' }}>
-            Follow Us <span style={{ color: 'var(--primary)' }}>@giftchoice</span>
+            Follow Us{" "}
+            <a
+              href="https://www.instagram.com/brandedfactory_wholesale/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline"
+              style={{ color: 'var(--primary)' }}
+            >
+              @brandedfactory_wholesale
+            </a>
           </h2>
           <div
             className="flex gap-6 overflow-x-auto pb-2 snap-x snap-mandatory scroll-smooth"

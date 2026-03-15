@@ -113,7 +113,7 @@ export default function CategoryList({ categories, onEdit, onDelete }) {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-4xl">🎁</span>
+                    <img src="/logo.jpeg" alt="" className="h-full w-full object-contain p-2" />
                   )}
                 </div>
                 <h4 className="font-bold text-lg mb-2" style={{ color: 'var(--foreground)' }}>{category.name}</h4>

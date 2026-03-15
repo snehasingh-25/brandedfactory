@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
 import Spinner from "../components/Spinner";
 import EmptyState from "../components/EmptyState";
+import { shuffleArray } from "../utils/shuffle";
 
 export default function Brand() {
   const { slug } = useParams();
@@ -14,6 +15,19 @@ export default function Brand() {
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const brandScrollRef = useRef(null);
+
+  const fetchAllProducts = async (category = "") => {
+    try {
+      const params = category ? new URLSearchParams({ category }) : new URLSearchParams();
+      const res = await fetch(`${API}/products?${params.toString()}`);
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [];
+      setProducts(shuffleArray(list));
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
 
   const fetchBrandProducts = async (brandSlug, category = "") => {
     try {
@@ -24,7 +38,7 @@ export default function Brand() {
         params.append("category", category);
         const res = await fetch(`${API}/products?${params.toString()}`);
         const data = await res.json();
-        setProducts(data || []);
+        setProducts(shuffleArray(Array.isArray(data) ? data : []));
         
         // Also fetch brand details
         const brandRes = await fetch(`${API}/brands/${brandSlug}`);
@@ -35,7 +49,7 @@ export default function Brand() {
         const res = await fetch(`${API}/brands/${brandSlug}`);
         const data = await res.json();
         setSelectedBrand(data);
-        setProducts(data.products || []);
+        setProducts(shuffleArray(Array.isArray(data.products) ? data.products : []));
       }
     } catch (error) {
       console.error("Error fetching brand products:", error);
@@ -56,12 +70,16 @@ export default function Brand() {
         setBrands(brandsData);
         setCategories(categoriesData);
         
-        // If slug is provided, find and set the brand
+        // If slug is provided, find and set the brand; otherwise no brand selected (show all products)
         if (slug) {
           const brand = brandsData.find(b => b.slug === slug);
           if (brand) {
             setSelectedBrand(brand);
+          } else {
+            setSelectedBrand(null);
           }
+        } else {
+          setSelectedBrand(null);
         }
         setLoading(false);
       })
@@ -77,11 +95,13 @@ export default function Brand() {
   }, [slug]);
 
   useEffect(() => {
-    if (selectedBrand && slug) {
+    if (selectedBrand) {
       fetchBrandProducts(selectedBrand.slug, categoryFilter);
+    } else {
+      fetchAllProducts(categoryFilter);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categoryFilter, slug, selectedBrand?.slug]);
+  }, [categoryFilter, selectedBrand?.slug]);
 
   const handleBrandClick = (brand) => {
     setSelectedBrand(brand);
@@ -103,6 +123,15 @@ export default function Brand() {
     const params = new URLSearchParams(searchParams);
     params.delete("category");
     setSearchParams(params);
+  };
+
+  const scrollBrands = (direction) => {
+    if (brandScrollRef.current) {
+      brandScrollRef.current.scrollBy({
+        left: direction === "left" ? -200 : 200,
+        behavior: "smooth",
+      });
+    }
   };
 
   if (loading) {
@@ -128,49 +157,84 @@ export default function Brand() {
           </p>
         </div>
 
-        {/* Brands Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 mb-12">
-          {brands.map((brand) => (
-            <Link
-              key={brand.id}
-              to={`/brands/${brand.slug}`}
-              onClick={() => handleBrandClick(brand)}
-              className="group text-center"
-            >
-              <div
-                className="w-full aspect-square rounded-full overflow-hidden mb-3 mx-auto transition-all duration-300 group-hover:scale-125 shadow-md group-hover:shadow-lg"
-                style={{ 
-                  backgroundColor: 'var(--secondary)',
-                  maxWidth: '150px'
-                }}
+        {/* Brands – horizontal scroll */}
+        <div className="relative mb-12">
+          <button
+            type="button"
+            onClick={() => scrollBrands("left")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+            style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--secondary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--card)';
+            }}
+          >
+            <svg className="w-5 h-5" style={{ color: 'var(--foreground)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div
+            ref={brandScrollRef}
+            className="flex gap-5 overflow-x-auto scrollbar-hide pb-4 px-2"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {brands.map((brand) => (
+              <Link
+                key={brand.id}
+                to={`/brands/${brand.slug}`}
+                onClick={() => handleBrandClick(brand)}
+                className="flex-shrink-0 flex flex-col items-center min-w-[140px] group text-center"
               >
-                {brand.imageUrl ? (
-                  <img
-                    src={brand.imageUrl}
-                    alt={brand.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-5xl">🏢</span>
-                  </div>
-                )}
-              </div>
-              <h3 className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
-                {brand.name}
-              </h3>
-            </Link>
-          ))}
+                <div
+                  className="w-32 h-32 rounded-full overflow-hidden mb-3 transition-all duration-300 group-hover:scale-110 group-hover:shadow-lg"
+                  style={{ backgroundColor: 'var(--secondary)' }}
+                >
+                  {brand.imageUrl ? (
+                    <img
+                      src={brand.imageUrl}
+                      alt={brand.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-5xl">🏢</span>
+                    </div>
+                  )}
+                </div>
+                <h3 className="font-semibold text-sm" style={{ color: 'var(--foreground)' }}>
+                  {brand.name}
+                </h3>
+              </Link>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => scrollBrands("right")}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 rounded-full p-3 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 border active:scale-95"
+            style={{ borderColor: 'var(--border)', backgroundColor: 'var(--card)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--secondary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'var(--card)';
+            }}
+          >
+            <svg className="w-5 h-5" style={{ color: 'var(--foreground)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
 
-        {/* Products for Selected Brand */}
-        {selectedBrand && (
+        {/* Products: all when no brand selected, or for selected brand */}
+        {brands.length > 0 && (
           <div className="mt-12">
             <div className="mb-8">
               <h3 className="text-3xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>
-                {selectedBrand.name}
+                {selectedBrand ? selectedBrand.name : "All Products"}
               </h3>
-              {selectedBrand.description && (
+              {selectedBrand?.description && (
                 <p className="body-text mb-4" style={{ color: 'var(--foreground)', opacity: 0.7 }}>
                   {selectedBrand.description}
                 </p>
@@ -231,9 +295,9 @@ export default function Brand() {
               </div>
             ) : (
               <EmptyState 
-                icon="🎁"
-                title="No Products Available"
-                description={`No products available for ${selectedBrand.name} yet`}
+                logoSrc="/logo.jpeg"
+                title={selectedBrand ? "No Products Available" : "No products available"}
+                description={selectedBrand ? `No products available for ${selectedBrand.name} yet` : "Products will appear here once they are added."}
               />
             )}
           </div>
@@ -242,7 +306,7 @@ export default function Brand() {
         {/* Show all brands if none selected */}
         {!selectedBrand && brands.length === 0 && (
           <EmptyState 
-            icon="🏢"
+            logoSrc="/logo.jpeg"
             title="No Brands Available"
             description="Brands will appear here once they are added."
           />

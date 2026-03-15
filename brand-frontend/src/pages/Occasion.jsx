@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { API } from "../api";
 import ProductCard from "../components/ProductCard";
+import EmptyState from "../components/EmptyState";
 
 export default function Occasion() {
   const { slug } = useParams();
@@ -230,14 +231,11 @@ export default function Occasion() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-16">
-                <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'oklch(92% .04 340)' }}>
-                  <span className="text-4xl">🎁</span>
-                </div>
-                <p className="font-medium" style={{ color: 'oklch(60% .02 340)' }}>
-                  No products available for this occasion yet
-                </p>
-              </div>
+              <EmptyState
+                logoSrc="/logo.jpeg"
+                title="No products available for this occasion yet"
+                description="Products for this occasion will appear here once they are added."
+              />
             )}
           </div>
         )}

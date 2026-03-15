@@ -128,6 +128,17 @@ export default function ProductDetail() {
           "XL",
           "XXL",
           "XXXL",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8",
+          "9",
+          "10",
+          "11",
+          "12",
           "28",
           "30",
           "32",
@@ -142,7 +153,13 @@ export default function ProductDetail() {
         ];
         const ai = order.indexOf(String(a?.label ?? ""));
         const bi = order.indexOf(String(b?.label ?? ""));
-        if (ai === -1 && bi === -1) return String(a?.label ?? "").localeCompare(String(b?.label ?? ""));
+        if (ai === -1 && bi === -1) {
+          // Fallback: if both are numeric, sort by number
+          const na = Number(a?.label);
+          const nb = Number(b?.label);
+          if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+          return String(a?.label ?? "").localeCompare(String(b?.label ?? ""), undefined, { numeric: true });
+        }
         if (ai === -1) return 1;
         if (bi === -1) return -1;
         return ai - bi;
@@ -217,7 +234,7 @@ export default function ProductDetail() {
                   )}
                 </>
               ) : (
-                <ImagePlaceholder width="100%" height="100%" icon="🎁" />
+                <ImagePlaceholder width="100%" height="100%" logoSrc="/logo.jpeg" />
               )}
             </div>
 
@@ -327,7 +344,7 @@ export default function ProductDetail() {
                     <label className="block text-sm font-semibold mb-2" style={{ color: 'var(--foreground)' }}>
                       Size: {selectedSize?.label || 'Select a size'}
                     </label>
-                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    <div className="grid grid-cols-6 sm:grid-cols-8 gap-1">
                       {sortedSizes.map((size) => {
                         const isAvailable = true; // In production, check size.available or stock
                         const isSelected = selectedSize?.id === size.id;
@@ -336,7 +353,7 @@ export default function ProductDetail() {
                             key={size.id}
                             onClick={() => isAvailable && setSelectedSize(size)}
                             disabled={!isAvailable}
-                            className={`p-3 rounded-lg border-2 font-semibold text-sm transition-all ${
+                            className={`px-3 py-3 rounded-md border font-medium text-xs transition-all ${
                               isSelected
                                 ? 'border-primary scale-105'
                                 : isAvailable

@@ -87,8 +87,8 @@ export default function Cart() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-5xl" style={{ opacity: 0.35 }}>🎁</span>
+                    <div className="w-full h-full flex items-center justify-center p-2">
+                      <img src="/logo.jpeg" alt="" className="max-h-full max-w-full object-contain opacity-60" />
                     </div>
                   )}
                 </div>

@@ -1,6 +1,7 @@
 // Empty state component
 export default function EmptyState({ 
   icon = "📦",
+  logoSrc = null,
   title = "No items found",
   description = "There are no items to display at the moment.",
   action = null,
@@ -8,8 +9,12 @@ export default function EmptyState({
 }) {
   return (
     <div className={`text-center py-16 ${className}`}>
-      <div className="inline-block p-6 rounded-full mb-4" style={{ backgroundColor: 'var(--secondary)' }}>
-        <span className="text-5xl">{icon}</span>
+      <div className="inline-block p-6 rounded-full mb-4 flex items-center justify-center" style={{ backgroundColor: 'var(--secondary)' }}>
+        {logoSrc ? (
+          <img src={logoSrc} alt="" className="h-16 w-16 object-contain" />
+        ) : (
+          <span className="text-5xl">{icon}</span>
+        )}
       </div>
       <h3 className="text-xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>
         {title}
